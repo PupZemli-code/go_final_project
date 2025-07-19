@@ -5,7 +5,7 @@ import (
 	"net/http"
 )
 
-// HomeHandler обрабатывает корневой путь http://localhost:7540/ и отдает индексный файл
+// TestHandler возвращает Metod, Host, Path
 func TestHandler(w http.ResponseWriter, r *http.Request) {
 
 	s := fmt.Sprintf("Method: %s\nHost: %s\nPath: %s",

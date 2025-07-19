@@ -1,38 +1,34 @@
 package main
 
 import (
-	"io"
 	"log"
 	"os"
 
 	"github.com/PupZemli-code/go-final-project/go_final_project/internal/server"
+	"github.com/PupZemli-code/go-final-project/go_final_project/pkg/db"
+	"github.com/PupZemli-code/go-final-project/go_final_project/pkg/logger"
 )
 
-// Создает лог файл, определяет форматирование
-func NewLogger() (*log.Logger, os.File) {
-	// Создает файд для логов
-	logfile, err := os.OpenFile("app.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
-	if err != nil {
-		log.Fatalf("ошибка создания или открытия лог файла app.log: %v", err)
-	}
-	// Настройка логов
-	logger := log.New(logfile, "LOG ", log.Ldate|log.Ltime)
-	io.MultiWriter(logfile, os.Stdout)
-	return logger, *logfile
-}
+var Logger *log.Logger
 
 func main() {
-	// Создание сервера
-	logger, logfile := NewLogger()
+	// Инициализация логгера
+	var logfile os.File
+	Logger, _ = logger.NewLogger()
 	defer logfile.Close()
+	// Создание сервера
+	srv := server.NewServer(Logger)
 
-	srv := server.NewServer(logger)
+	err := db.Init(db.PathDb())
+	if err != nil {
+		Logger.Fatalf("ошибка инициализации db: %v", err)
+	}
 
 	// Запуск сервера
-	logger.Printf("запуск сервера на %s", srv.HTTPServer.Addr)
+	Logger.Printf("запуск сервера на %s", srv.HTTPServer.Addr)
 
-	err := srv.HTTPServer.ListenAndServe()
+	err = srv.HTTPServer.ListenAndServe()
 	if err != nil {
-		logger.Fatalf("ошибка запуска сервера: %v", err)
+		Logger.Fatalf("ошибка запуска сервера: %v", err)
 	}
 }
