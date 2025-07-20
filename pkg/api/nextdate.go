@@ -1,4 +1,4 @@
-package repeat
+package api
 
 import (
 	"fmt"
@@ -51,7 +51,7 @@ func NextDate(now time.Time, dstart string, repeat string) (string, error) {
 		return "", fmt.Errorf("формат repeat не прошел проверку: %w", err)
 	}
 	// В разработке
-	date, err := time.Parse("20060102", dstart)
+	date, err := time.Parse(dateFormat, dstart)
 	if err != nil {
 		return "", fmt.Errorf("время в переменной dstart не может быть преобразовано в корректную дату — ошибка выполнения time.Parse('20060102', dstart): %w", err)
 	}
@@ -71,7 +71,7 @@ func NextDate(now time.Time, dstart string, repeat string) (string, error) {
 				break
 			}
 		}
-		return date.Format("20060102"), nil
+		return date.Format(dateFormat), nil
 
 	case "w":
 		return "", fmt.Errorf("формат еще не подерживается")
@@ -84,7 +84,7 @@ func NextDate(now time.Time, dstart string, repeat string) (string, error) {
 				break
 			}
 		}
-		return date.Format("20060102"), nil
+		return date.Format(dateFormat), nil
 	default:
 		return "", nil
 	}

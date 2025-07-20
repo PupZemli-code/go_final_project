@@ -13,10 +13,9 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"path/filepath"
 	"time"
 
-	handler "github.com/PupZemli-code/go-final-project/go_final_project/internal/handlers"
+	"github.com/PupZemli-code/go-final-project/go_final_project/pkg/api"
 	"github.com/go-chi/chi"
 )
 
@@ -24,16 +23,6 @@ import (
 type Server struct {
 	Logger     *log.Logger
 	HTTPServer *http.Server
-}
-
-func staticPath() (http.Handler, error) {
-	// Настройка раздачи статических файлов
-	staticPath, err := filepath.Abs("./web")
-	if err != nil {
-		return nil, err
-	}
-	fs := http.FileServer(http.Dir(staticPath))
-	return fs, nil
 }
 
 // GetAddr принемает значение переменных окружения "TODO_HOST" и "TODO_PORT",
@@ -52,16 +41,12 @@ func GetAddr() string {
 
 // Создает сервер
 func NewServer(logger *log.Logger) *Server {
-	// Инициализация роутера
+	// Инициализация роутера и хендлеров
 	r := chi.NewRouter()
-
-	fs, err := staticPath()
+	err := api.Init(r)
 	if err != nil {
 		logger.Fatal(err)
 	}
-
-	r.Handle("/*", fs)
-	r.Get("/test", handler.TestHandler)
 
 	// Описание сервера
 	server := &http.Server{

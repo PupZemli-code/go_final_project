@@ -32,3 +32,6 @@ func main() {
 		Logger.Fatalf("ошибка запуска сервера: %v", err)
 	}
 }
+func Run() {
+
+}
