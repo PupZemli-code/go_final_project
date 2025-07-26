@@ -14,6 +14,7 @@ func NewLogger() (*log.Logger, os.File) {
 		log.Fatalf("ошибка создания или открытия лог файла app.log: %v", err)
 	}
 	// Настройка логов
+
 	logger := log.New(logfile, "LOG ", log.Ldate|log.Ltime)
 	logger.SetOutput(io.MultiWriter(logfile, os.Stdout))
 	return logger, *logfile

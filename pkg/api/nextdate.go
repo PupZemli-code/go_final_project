@@ -2,9 +2,12 @@ package api
 
 import (
 	"fmt"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/PupZemli-code/go-final-project/go_final_project/pkg/logger"
 )
 
 // ValidDstarRepeat производит проверки входящих данных dstart, repeat
@@ -27,18 +30,61 @@ func ValidDstarRepeat(dstart string, repeat string) error {
 			return fmt.Errorf("первышено максимально допустимый интрервал для %v = %v", formatRepeat, interval)
 		}
 	case "w":
+		days := strings.Split(formatRepeat[1], ",")
+		for _, day := range days {
+			dayNum, err := strconv.Atoi(day)
+			if err != nil {
+				return fmt.Errorf("ошибка форматирования strconv.Atoi(formatRepeat[1]): %w", err)
+			}
+			if dayNum < 1 || dayNum > 7 {
+				return fmt.Errorf("некорректный день недели: %v", dayNum)
+			}
+		}
 		if len(formatRepeat) <= 1 {
 			return fmt.Errorf("не указаны дни повторений")
 		}
-		interval, err := strconv.Atoi(formatRepeat[1])
-		if err != nil {
-			return err
+		for _, dayStr := range days {
+			dayNum, err := strconv.Atoi(dayStr)
+			if err != nil {
+				return fmt.Errorf("ошибка конвертации: %w", err)
+			}
+			if dayNum > 7 {
+				return fmt.Errorf("первышено максимально допустимый интрервал для %v > 7", dayNum)
+			}
 		}
-		if interval > 7 {
-			return fmt.Errorf("первышено максимально допустимый интрервал для %v = %v", formatRepeat, interval)
+	case "m":
+		if len(formatRepeat) == 3 {
+			monthsSlice := strings.Split(formatRepeat[2], ",")
+			for _, v := range monthsSlice {
+				numMonth, err := strconv.Atoi(v)
+				if err != nil {
+					return fmt.Errorf("ошибка форматирования strconv.Atoi(formatRepeat[1]): %w", err)
+				}
+				if numMonth > 12 {
+					return fmt.Errorf("недоступный месяц под номером: %v", numMonth)
+				}
+			}
 		}
+		days := strings.Split(formatRepeat[1], ",")
+		var daysInt []int
+		for _, v := range days {
+
+			vInt, err := strconv.Atoi(v)
+			if err != nil {
+				return fmt.Errorf("ошибка форматирования strconv.Atoi(v): %w", err)
+			}
+
+			daysInt = append(daysInt, int(vInt))
+		}
+		sort.Ints(daysInt)
+		for _, v := range daysInt {
+			if v > 31 {
+				return fmt.Errorf("номер дня в инструкции > 31: %v, %v", v, daysInt)
+			}
+		}
+
 	default:
-		if formatRepeat[0] != "m" && formatRepeat[0] != "y" {
+		if formatRepeat[0] != "y" {
 			return fmt.Errorf("недопустимый символ формата: %v", formatRepeat[0])
 		}
 	}
@@ -47,20 +93,21 @@ func ValidDstarRepeat(dstart string, repeat string) error {
 
 // NextDate возвращает строку с датой в формате 20060102
 func NextDate(now time.Time, dstart string, repeat string) (string, error) {
+	logger, _ := logger.NewLogger()
 	if err := ValidDstarRepeat(dstart, repeat); err != nil {
 		return "", fmt.Errorf("формат repeat не прошел проверку: %w", err)
 	}
-	// В разработке
 	date, err := time.Parse(dateFormat, dstart)
 	if err != nil {
 		return "", fmt.Errorf("время в переменной dstart не может быть преобразовано в корректную дату — ошибка выполнения time.Parse('20060102', dstart): %w", err)
 	}
 	formatRepeat := strings.Split(repeat, " ")
-	var days int
+	//week := make(map[string]int, 8)
+	//week = map[string]int{"1": 1, "2": 2, "3": 3, "4": 4, "5": 5, "6": 6, "7": 7}
 
 	switch formatRepeat[0] {
 	case "d":
-		days, err = strconv.Atoi(formatRepeat[1])
+		days, err := strconv.Atoi(formatRepeat[1])
 		if err != nil {
 			return "", fmt.Errorf("ошибка форматирования strconv.Atoi(formatRepeat[1]): %w", err)
 		}
@@ -71,12 +118,108 @@ func NextDate(now time.Time, dstart string, repeat string) (string, error) {
 				break
 			}
 		}
+		fmt.Println("NextDate (d):", date.Format(dateFormat)) // Add logging
 		return date.Format(dateFormat), nil
 
 	case "w":
-		return "", fmt.Errorf("формат еще не подерживается")
+		var daysWeek [7]bool
+		days := strings.Split(formatRepeat[1], ",")
+		for _, v := range days {
+			daysInt, err := strconv.Atoi(v)
+			if err != nil {
+				return "", err
+			}
+			daysWeek[daysInt-1] = true
+		}
+		fmt.Println(daysWeek)
+		for {
+			date = date.AddDate(0, 0, 1)
+			weekday := date.Weekday()
+			v := GetDayNumberByString(weekday.String())
+			fmt.Printf("дата: %s, значение v: %d, соответствует дню недели: %v\n", date.Format(dateFormat), v, daysWeek[v])
+
+			if daysWeek[v] {
+				if afterNow(date, now) {
+					return date.Format(dateFormat), nil
+				}
+			}
+		}
+
 	case "m":
-		return "", fmt.Errorf("формат еще не подерживается")
+		var day [32]bool
+		var months [13]bool
+		// заполняем доступные месяцы
+		if len(formatRepeat) == 3 {
+			monthsSlice := strings.Split(formatRepeat[2], ",")
+			if monthsSlice[0] == "" {
+				for i, _ := range months {
+					months[i] = true
+				}
+			}
+			for _, v := range monthsSlice {
+				numMonth, err := strconv.Atoi(v)
+				if err != nil {
+					return "", fmt.Errorf("ошибка форматирования strconv.Atoi(formatRepeat[1]): %w", err)
+				}
+				months[numMonth-1] = true
+			}
+		} else {
+			for i, _ := range months {
+				months[i] = true
+			}
+		}
+		var days []int
+		for _, v := range strings.Split(formatRepeat[1], ",") {
+			dayNum, err := strconv.Atoi(v)
+			if err != nil {
+				return "", fmt.Errorf("ошибка форматирования strconv.Atoi(formatRepeat[1]): %w", err)
+			}
+
+			days = append(days, dayNum)
+		}
+		// Запись дней в слайс day
+		for _, dayNum := range days {
+			// Запись значений > 0
+			if dayNum > 0 {
+				day[dayNum-1] = true
+			}
+			// Запись значений < 0
+			if dayNum < 0 {
+				if dayNum < -2 {
+					return "", fmt.Errorf("запрос на -3 день недоступен")
+				}
+				y, m, _ := date.Date()
+				logger.Printf("m=%d", m)
+
+				firstOfNextMonth := time.Date(y, m+1, 1, 0, 0, 0, 0, time.UTC)
+				logger.Printf("первый день следующего месяца %v", firstOfNextMonth.Format(dateFormat))
+				// lastDayMonth хранит последний день месяца в формате time.Time
+				// lastDayMonth := firstOfNextMonth.AddDate(0, 0, -1)
+				// dayMinus хранит номер дня высчитаный из инструкции -1, ...
+				dayMinus := firstOfNextMonth.AddDate(0, 0, dayNum)
+				logger.Printf("дата после вычитания dayMinus[%v]", dayMinus.Format(dateFormat))
+				// dayCount хранит кол-во дней в месяце
+				_, _, dayCount := dayMinus.Date()
+
+				day[dayCount-1] = true
+			}
+		}
+		for i := 0; i < 700; i++ {
+			date = date.AddDate(0, 0, 1)
+			_, m, d := date.Date()
+			if months[m-1] {
+				if day[d-1] {
+					if afterNow(date, now) {
+						return date.Format(dateFormat), nil
+					}
+				}
+			}
+			// logger.Printf("month[%d]=%v day[%d]=%v", m-1, months[m-1], d-1, day[d-1])
+			if i >= 700 {
+				return "", fmt.Errorf("превышено число итераций цикла i > 700, %v\n%v", months, day)
+			}
+		}
+
 	case "y":
 		for {
 			date = date.AddDate(1, 0, 0)
@@ -85,11 +228,26 @@ func NextDate(now time.Time, dstart string, repeat string) (string, error) {
 			}
 		}
 		return date.Format(dateFormat), nil
-	default:
-		return "", nil
 	}
+	return "", nil
 }
 
 func afterNow(date, now time.Time) bool {
 	return date.After(now)
+}
+
+func GetDayNumberByString(day string) int {
+	dayMap := map[string]int{
+		"Sunday":    6,
+		"Monday":    0,
+		"Tuesday":   1,
+		"Wednesday": 2,
+		"Thursday":  3,
+		"Friday":    4,
+		"Saturday":  5,
+	}
+	if number, ok := dayMap[day]; ok {
+		return number
+	}
+	return 0
 }
