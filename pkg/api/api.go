@@ -1,7 +1,7 @@
 package api
 
 import (
-	"bytes"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"path/filepath"
@@ -22,7 +22,8 @@ func staticPath() (http.Handler, error) {
 	return fs, nil
 }
 
-func Init(r *chi.Mux) error {
+// InitMux инициализирует роутер chi
+func InitMux(r *chi.Mux) error {
 
 	fs, err := staticPath()
 	if err != nil {
@@ -32,6 +33,7 @@ func Init(r *chi.Mux) error {
 	r.Handle("/*", fs)
 	r.Get("/test", TestHandler)
 	r.Get("/api/nextdate", NextDayHandler)
+	r.Post("/api/task", AddTaskHandler)
 	return nil
 }
 
@@ -43,23 +45,43 @@ func TestHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(s))
 }
 
+// Обработчик "/api/nextdate"
 func NextDayHandler(w http.ResponseWriter, r *http.Request) {
 	date := r.FormValue("date")
 	repeat := r.FormValue("repeat")
 	now, err := time.Parse(dateFormat, r.FormValue("now"))
 	if err != nil {
 		sendError(w, http.StatusBadRequest, fmt.Errorf("ошибка парсинга дат: %w", err))
+		return
 	}
 	naxtDate, err := NextDate(now, date, repeat)
 	if err != nil {
 		sendError(w, http.StatusBadRequest, err)
+		return
 	}
 	w.Write([]byte(naxtDate))
 }
 
+// sendError отправляет ошибку клиенту в формате json
 func sendError(w http.ResponseWriter, statusCode int, err error) {
-	var buf bytes.Buffer
-	fmt.Fprintf(&buf, "%s", err.Error())
+
+	// Формирует ключ:значение
+	errorResponse := map[string]string{"error": fmt.Sprint(err)}
+
+	// устанавливает заголовок Content-Type
+	w.Header().Set("Content-Type", "application/json")
+
+	// устанавливает HTTP статус
 	w.WriteHeader(statusCode)
-	w.Write(buf.Bytes())
+
+	// записываем мапу в json
+	data, err := json.Marshal(errorResponse)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte("ошибка при форматировании ответа в json"))
+		return
+	}
+
+	// отправляет ответ json
+	w.Write(data)
 }

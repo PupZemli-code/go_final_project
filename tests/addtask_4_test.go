@@ -5,13 +5,16 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"net/http/cookiejar"
 	"strconv"
 	"testing"
 	"time"
 
+	"github.com/PupZemli-code/go-final-project/go_final_project/pkg/db"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func requestJSON(apipath string, values map[string]any, method string) ([]byte, error) {
@@ -168,4 +171,37 @@ func TestAddTask(t *testing.T) {
 		}
 		check()
 	}
+}
+
+// Функция для инициализации базы данных перед тестами
+func TestMain(m *testing.M) {
+	// Инициализируем базу данных
+	_, err := db.InitDb(db.PathDb())
+	if err != nil {
+		log.Fatalf("Ошибка инициализации БД: %v", err)
+	}
+
+	// Запускаем тесты
+	m.Run()
+}
+
+func TestFuncAddTaskDb(t *testing.T) {
+	// Создаем тестовую задачу
+	task := db.Task{
+		Date:    "2025.01.01",
+		Title:   "test",
+		Comment: "123",
+		Repeat:  "w 1",
+	}
+	db, err := db.InitDb(db.PathDb())
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer db.Close()
+	// Добавляем задачу
+	id, err := db.AddTask(&task)
+
+	// Проверяем результаты
+	assert.NotEqual(t, 0, id, "id не может быть равен 0")
+	require.NoError(t, err)
 }

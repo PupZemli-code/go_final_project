@@ -43,7 +43,7 @@ func GetAddr() string {
 func NewServer(logger *log.Logger) *Server {
 	// Инициализация роутера и хендлеров
 	r := chi.NewRouter()
-	err := api.Init(r)
+	err := api.InitMux(r)
 	if err != nil {
 		logger.Fatal(err)
 	}

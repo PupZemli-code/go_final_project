@@ -6,8 +6,6 @@ import (
 	"strconv"
 	"strings"
 	"time"
-
-	"github.com/PupZemli-code/go-final-project/go_final_project/pkg/logger"
 )
 
 // ValidDstarRepeat производит проверки входящих данных dstart, repeat
@@ -30,7 +28,15 @@ func ValidDstarRepeat(dstart string, repeat string) error {
 			return fmt.Errorf("первышено максимально допустимый интрервал для %v = %v", formatRepeat, interval)
 		}
 	case "w":
+		if len(formatRepeat) <= 1 {
+			return fmt.Errorf("не указаны дни повторений")
+		}
+		if formatRepeat[1] == "" || len(formatRepeat[1]) == 0 {
+			return fmt.Errorf("некоректные параметры для правила")
+		}
+
 		days := strings.Split(formatRepeat[1], ",")
+
 		for _, day := range days {
 			dayNum, err := strconv.Atoi(day)
 			if err != nil {
@@ -40,9 +46,7 @@ func ValidDstarRepeat(dstart string, repeat string) error {
 				return fmt.Errorf("некорректный день недели: %v", dayNum)
 			}
 		}
-		if len(formatRepeat) <= 1 {
-			return fmt.Errorf("не указаны дни повторений")
-		}
+
 		for _, dayStr := range days {
 			dayNum, err := strconv.Atoi(dayStr)
 			if err != nil {
@@ -93,7 +97,7 @@ func ValidDstarRepeat(dstart string, repeat string) error {
 
 // NextDate возвращает строку с датой в формате 20060102
 func NextDate(now time.Time, dstart string, repeat string) (string, error) {
-	logger, _ := logger.NewLogger()
+	// logger, _ := logger.NewLogger()
 	if err := ValidDstarRepeat(dstart, repeat); err != nil {
 		return "", fmt.Errorf("формат repeat не прошел проверку: %w", err)
 	}
@@ -102,24 +106,25 @@ func NextDate(now time.Time, dstart string, repeat string) (string, error) {
 		return "", fmt.Errorf("время в переменной dstart не может быть преобразовано в корректную дату — ошибка выполнения time.Parse('20060102', dstart): %w", err)
 	}
 	formatRepeat := strings.Split(repeat, " ")
-	//week := make(map[string]int, 8)
-	//week = map[string]int{"1": 1, "2": 2, "3": 3, "4": 4, "5": 5, "6": 6, "7": 7}
 
+	// Обработка всех случаев
 	switch formatRepeat[0] {
 	case "d":
 		days, err := strconv.Atoi(formatRepeat[1])
 		if err != nil {
 			return "", fmt.Errorf("ошибка форматирования strconv.Atoi(formatRepeat[1]): %w", err)
 		}
-
+		// if days == 1 {
+		// 	return date.Format(dateFormat), nil
+		// }
 		for {
 			date = date.AddDate(0, 0, days)
 			if afterNow(date, now) {
-				break
+				return date.Format(dateFormat), nil
+				// break
 			}
 		}
-		fmt.Println("NextDate (d):", date.Format(dateFormat)) // Add logging
-		return date.Format(dateFormat), nil
+		// fmt.Println("NextDate (d):", date.Format(dateFormat)) // Add logging
 
 	case "w":
 		var daysWeek [7]bool
@@ -131,12 +136,12 @@ func NextDate(now time.Time, dstart string, repeat string) (string, error) {
 			}
 			daysWeek[daysInt-1] = true
 		}
-		fmt.Println(daysWeek)
+		// fmt.Println(daysWeek)
 		for {
 			date = date.AddDate(0, 0, 1)
 			weekday := date.Weekday()
 			v := GetDayNumberByString(weekday.String())
-			fmt.Printf("дата: %s, значение v: %d, соответствует дню недели: %v\n", date.Format(dateFormat), v, daysWeek[v])
+			// fmt.Printf("дата: %s, значение v: %d, соответствует дню недели: %v\n", date.Format(dateFormat), v, daysWeek[v])
 
 			if daysWeek[v] {
 				if afterNow(date, now) {
@@ -189,16 +194,15 @@ func NextDate(now time.Time, dstart string, repeat string) (string, error) {
 					return "", fmt.Errorf("запрос на -3 день недоступен")
 				}
 				y, m, _ := date.Date()
-				logger.Printf("m=%d", m)
+				// logger.Printf("m=%d", m)
 
 				firstOfNextMonth := time.Date(y, m+1, 1, 0, 0, 0, 0, time.UTC)
-				logger.Printf("первый день следующего месяца %v", firstOfNextMonth.Format(dateFormat))
-				// lastDayMonth хранит последний день месяца в формате time.Time
-				// lastDayMonth := firstOfNextMonth.AddDate(0, 0, -1)
-				// dayMinus хранит номер дня высчитаный из инструкции -1, ...
+				// logger.Printf("первый день следующего месяца %v", firstOfNextMonth.Format(dateFormat))
+
+				// dayMinus хранит номер дня высчитаный из инструкции -1,-2
 				dayMinus := firstOfNextMonth.AddDate(0, 0, dayNum)
-				logger.Printf("дата после вычитания dayMinus[%v]", dayMinus.Format(dateFormat))
-				// dayCount хранит кол-во дней в месяце
+				// logger.Printf("дата после вычитания dayMinus[%v]", dayMinus.Format(dateFormat))
+				// dayCount номер последнего или предпоследнего дня
 				_, _, dayCount := dayMinus.Date()
 
 				day[dayCount-1] = true
@@ -232,10 +236,12 @@ func NextDate(now time.Time, dstart string, repeat string) (string, error) {
 	return "", nil
 }
 
+// afterNow проверяет что date > now
 func afterNow(date, now time.Time) bool {
 	return date.After(now)
 }
 
+// GetDayNumberByString компенсирует разницу начала отсчета недели
 func GetDayNumberByString(day string) int {
 	dayMap := map[string]int{
 		"Sunday":    6,

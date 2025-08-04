@@ -1,6 +1,8 @@
 package main
 
 import (
+	"database/sql"
+	"fmt"
 	"log"
 	"os"
 
@@ -16,22 +18,29 @@ func main() {
 	var logfile os.File
 	Logger, _ = logger.NewLogger()
 	defer logfile.Close()
+
 	// Создание сервера
 	srv := server.NewServer(Logger)
 
-	err := db.Init(db.PathDb())
+	// Инициализация базы данных
+	_, err := db.InitDb(db.PathDb())
 	if err != nil {
 		Logger.Fatalf("ошибка инициализации db: %v", err)
 	}
 
-	// Запуск сервера
-	Logger.Printf("запуск сервера на %s", srv.HTTPServer.Addr)
+	// настройте подключение к БД
+	db, err := sql.Open("sqlite", "tracker.db")
+	if err != nil {
+		fmt.Printf("ошибка подключения к базе данных: %v", err)
+		return
+	}
+	defer db.Close()
 
+	// Запуск сервера
+	Logger.Printf("------------------------------------------")
+	Logger.Printf("Запуск сервера на %s", srv.HTTPServer.Addr)
 	err = srv.HTTPServer.ListenAndServe()
 	if err != nil {
 		Logger.Fatalf("ошибка запуска сервера: %v", err)
 	}
-}
-func Run() {
-
 }

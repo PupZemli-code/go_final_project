@@ -3,49 +3,78 @@ package db
 import (
 	"database/sql"
 	"fmt"
+	"log"
 	"os"
+	"time"
 
 	_ "modernc.org/sqlite"
 )
 
-var db *sql.DB
+var Db *sql.DB
 
+// Структура для работы с базой данных
+type DB struct {
+	*sql.DB
+}
+
+// Возвращает путь до базы данных, берет его из переменной
+// окружения "TODO_DBFILE", или использует путь по умолчанию
 func PathDb() string {
+	// Путь по переменной окружения
 	pathDb := os.Getenv("TODO_DBFILE")
+	// Имя db
 	dbName := "scheduler.db"
+	// Если переменная окружения пуста (не используется)
 	if pathDb == "" {
+		// путь по умолчанию
 		pathDb = "pkg/db/"
+		// Создает деррикторию если она не сузествует
+		if err := os.MkdirAll(pathDb, 0755); err != nil {
+			log.Fatalf("ошибка создания директория: %v", err)
+		}
 	}
 	return fmt.Sprintf("%s/%s", pathDb, dbName)
 }
 
-func Init(dbFile string) error {
-	// Команда для создания и настройки таблицы
+// Создает подключение к базе данных, если базы
+// нет, создает ее по указанной схеме
+// Инициализация базы данных
+func InitDb(pathDb string) (*DB, error) {
 	schema := `
-		CREATE TABLE scheduler (
-			id INTEGER PRIMARY KEY AUTOINCREMENT,
-			date CHAR(8) NOT NULL DEFAULT "",
-			comment TEXT NOT NULL DEFAULT "",
-			title VARCHAR NOT NULL DEFAULT "",
-			repeat VARCHAR(128) NOT NULL DEFAULT ""
-		);
-		CREATE INDEX date_id ON scheduler(date);
-		`
-	_, err := os.Stat(dbFile)
-	var install bool
+    CREATE TABLE IF NOT EXISTS scheduler (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        date CHAR(8) NOT NULL DEFAULT '',
+        title TEXT NOT NULL DEFAULT '',
+        comment TEXT NOT NULL DEFAULT '',
+        repeat VARCHAR(128) NOT NULL DEFAULT ''
+    );
+    CREATE INDEX IF NOT EXISTS date_id ON scheduler(date);
+    `
 
+	// Открываем соединение
+	db, err := sql.Open("sqlite", pathDb)
 	if err != nil {
-		install = true
+		return nil, fmt.Errorf("ошибка подключения к БД: %w", err)
 	}
-	if install { // if install = true
-		db, err = sql.Open("sqlite", dbFile)
-		if err != nil {
-			return err
-		}
-		_, err = db.Exec(schema)
-		if err != nil {
-			return err
-		}
+
+	// Настройка пула подключений
+	db.SetMaxOpenConns(10)
+	db.SetMaxIdleConns(5)
+	db.SetConnMaxLifetime(time.Minute * 10)
+
+	// Создаем таблицы
+	_, err = db.Exec(schema)
+	if err != nil {
+		return nil, fmt.Errorf("ошибка создания таблицы: %w", err)
 	}
-	return nil
+
+	Db = db
+	return &DB{DB: db}, nil
+}
+
+// Закрытие подключения
+func CloseDb() {
+	if Db != nil {
+		Db.Close()
+	}
 }
