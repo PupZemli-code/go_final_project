@@ -3,14 +3,17 @@ package api
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"path/filepath"
 	"time"
 
+	"github.com/PupZemli-code/go-final-project/go_final_project/pkg/logger"
 	"github.com/go-chi/chi"
 )
 
 var dateFormat string = "20060102"
+var Logger *log.Logger
 
 func staticPath() (http.Handler, error) {
 	// Настройка раздачи статических файлов
@@ -24,6 +27,7 @@ func staticPath() (http.Handler, error) {
 
 // InitMux инициализирует роутер chi
 func InitMux(r *chi.Mux) error {
+	Logger, _ = logger.NewLogger()
 
 	fs, err := staticPath()
 	if err != nil {
@@ -34,6 +38,7 @@ func InitMux(r *chi.Mux) error {
 	r.Get("/test", TestHandler)
 	r.Get("/api/nextdate", NextDayHandler)
 	r.Post("/api/task", AddTaskHandler)
+	r.Get("/api/tasks", TasksHendler)
 	return nil
 }
 
@@ -77,6 +82,7 @@ func sendError(w http.ResponseWriter, statusCode int, err error) {
 	// записываем мапу в json
 	data, err := json.Marshal(errorResponse)
 	if err != nil {
+		Logger.Printf("ошибка при форматировании ответа в json")
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte("ошибка при форматировании ответа в json"))
 		return
@@ -84,4 +90,24 @@ func sendError(w http.ResponseWriter, statusCode int, err error) {
 
 	// отправляет ответ json
 	w.Write(data)
+}
+
+// writeJson отправляет json ответ
+func writeJson(w http.ResponseWriter, data any) {
+
+	// Устанавливаем заголовок Content-Type
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+
+	// Маршалинг данных
+	jsonData, err := json.Marshal(data)
+	if err != nil {
+		Logger.Printf("Ошибка при форматировании ответа в JSON: %v", err)
+		http.Error(w, "Ошибка при форматировании ответа в JSON", http.StatusInternalServerError)
+		return
+	}
+
+	// отправляет ответ json
+	if _, err := w.Write(jsonData); err != nil {
+		Logger.Printf("Ошибка при отправке JSON ответа: %v", err)
+	}
 }

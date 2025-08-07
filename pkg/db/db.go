@@ -7,9 +7,11 @@ import (
 	"os"
 	"time"
 
+	"github.com/PupZemli-code/go-final-project/go_final_project/pkg/logger"
 	_ "modernc.org/sqlite"
 )
 
+var Logger *log.Logger
 var Db *sql.DB
 
 // Структура для работы с базой данных
@@ -40,6 +42,7 @@ func PathDb() string {
 // нет, создает ее по указанной схеме
 // Инициализация базы данных
 func InitDb(pathDb string) (*DB, error) {
+	Logger, _ = logger.NewLogger()
 	schema := `
     CREATE TABLE IF NOT EXISTS scheduler (
         id INTEGER PRIMARY KEY AUTOINCREMENT,

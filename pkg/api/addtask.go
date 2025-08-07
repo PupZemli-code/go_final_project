@@ -3,21 +3,16 @@ package api
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"strconv"
 	"time"
 
 	"github.com/PupZemli-code/go-final-project/go_final_project/pkg/db"
-	"github.com/PupZemli-code/go-final-project/go_final_project/pkg/logger"
 )
-
-var Db *db.DB
 
 // AddTaskHandler обрабатывает запрос "/api/task" POST
 func AddTaskHandler(w http.ResponseWriter, r *http.Request) {
 
-	logger, _ := logger.NewLogger()
 	// Проверяет метод запроса
 	if r.Method != http.MethodPost {
 		sendError(w, http.StatusMethodNotAllowed, fmt.Errorf("разрешен только метод POST"))
@@ -37,14 +32,14 @@ func AddTaskHandler(w http.ResponseWriter, r *http.Request) {
 	// Проверяет корректноять парсинга
 	t, err := time.Parse(dateFormat, task.Date)
 	if err != nil {
-		logger.Printf("ошибка парсинга даты Date [входные данные: %v]: %v", task.Date, err)
+		Logger.Printf("ошибка парсинга даты Date [входные данные: %v]: %v", task.Date, err)
 		sendError(w, http.StatusBadRequest, fmt.Errorf("ошибка парсинга даты Date: %w", err))
 		return
 	}
 
 	// Проверяет наличие данных в Title (поле не может быть пустым)
 	if task.Title == "" || len(task.Title) == 0 {
-		logger.Printf("ошибка проверки поля task.Title, поле title не может быть пустым: %v", task)
+		Logger.Printf("ошибка проверки поля task.Title, поле title не может быть пустым: %v", task)
 		sendError(w, http.StatusBadRequest, fmt.Errorf("поле title не может быть пустым"))
 		return
 	}
@@ -61,7 +56,7 @@ func AddTaskHandler(w http.ResponseWriter, r *http.Request) {
 			if task.Repeat != "" {
 				nextDate, err := NextDate(time.Now(), task.Date, task.Repeat)
 				if err != nil {
-					logger.Printf("ошибка рассчета даты NextDate: %v", err)
+					Logger.Printf("ошибка рассчета даты NextDate: %v", err)
 					sendError(w, http.StatusBadRequest, fmt.Errorf("ошибка рассчета даты NextDate: %w", err))
 					return
 				}
@@ -79,32 +74,26 @@ func AddTaskHandler(w http.ResponseWriter, r *http.Request) {
 		if task.Repeat != "" {
 			nextDate, err := NextDate(time.Now(), task.Date, task.Repeat)
 			if err != nil {
-				logger.Printf("ошибка рассчета даты NextDate: %v", err)
+				Logger.Printf("ошибка рассчета даты NextDate: %v", err)
 				sendError(w, http.StatusBadRequest, fmt.Errorf("ошибка рассчета даты NextDate: %w", err))
 				return
 			}
 			task.Date = nextDate
 		}
 	}
-	Db, err := db.InitDb(db.PathDb())
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer db.CloseDb()
-
 	// id, err := dbInstance.AddTask(&task)
-	id, err := Db.AddTask(&task)
+	id, err := db.AddTask(&task)
 	if err != nil {
-		logger.Printf("ошибка добавления task в базу данных: %v", err)
+		Logger.Printf("ошибка добавления task в базу данных: %v", err)
 		sendError(w, http.StatusBadRequest, fmt.Errorf("ошибка добавления task в базу данных: %w", err))
 		return
 	}
 	task.ID = strconv.Itoa(int(id))
 
-	//
+	// Маршалинг данных
 	data, err := json.Marshal(map[string]string{"id": task.ID})
 	if err != nil {
-		logger.Printf("ошибка при форматировании ответа в json")
+		Logger.Printf("ошибка при форматировании ответа в json")
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte("ошибка при форматировании ответа в json"))
 		return

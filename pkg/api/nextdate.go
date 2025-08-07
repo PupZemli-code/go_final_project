@@ -97,7 +97,6 @@ func ValidDstarRepeat(dstart string, repeat string) error {
 
 // NextDate возвращает строку с датой в формате 20060102
 func NextDate(now time.Time, dstart string, repeat string) (string, error) {
-	// logger, _ := logger.NewLogger()
 	if err := ValidDstarRepeat(dstart, repeat); err != nil {
 		return "", fmt.Errorf("формат repeat не прошел проверку: %w", err)
 	}
