@@ -3,23 +3,22 @@ package api
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
-	"strconv"
 	"time"
 
 	"github.com/PupZemli-code/go-final-project/go_final_project/pkg/db"
 )
 
-// AddTaskHandler обрабатывает запрос "/api/task" POST
-func AddTaskHandler(w http.ResponseWriter, r *http.Request) {
-
+// Принемает Task, возвращает пустой интерфейс any{} == interface{}{}
+func SaveTaskHandler(w http.ResponseWriter, r *http.Request) {
+	log.Print("SaveTaskHandler запущен")
 	// Структура для хранения данных
 	var task db.Task
 
 	// Читает тело запроса
 	decoder := json.NewDecoder(r.Body)
 	if err := decoder.Decode(&task); err != nil {
-		Logger.Printf("Ошибка парсинга JSON: %v", err)
 		http.Error(w, "Ошибка парсинга JSON", http.StatusBadRequest)
 		return
 	}
@@ -76,17 +75,12 @@ func AddTaskHandler(w http.ResponseWriter, r *http.Request) {
 			task.Date = nextDate
 		}
 	}
-	// id, err := dbInstance.AddTask(&task)
-	id, err := db.AddTask(&task)
+	err = db.UpdateTask(&task)
 	if err != nil {
-		Logger.Printf("ошибка добавления task в базу данных: %v", err)
-		sendError(w, http.StatusBadRequest, fmt.Errorf("ошибка добавления task в базу данных: %w", err))
+		Logger.Printf("ошибка обновления task в базе данных: %v", err)
+		sendError(w, http.StatusBadRequest, fmt.Errorf("ошибка обновления task в базе данных: %w", err))
 		return
 	}
-	task.ID = strconv.Itoa(int(id))
-
-	//writeJson(w, task.ID)
-	writeJson(w, map[string]any{
-		"id": task.ID,
-	})
+	// Отправляет пустой интерфейс
+	writeJson(w, map[string]any{})
 }

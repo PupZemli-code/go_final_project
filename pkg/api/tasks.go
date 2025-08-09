@@ -11,9 +11,6 @@ import (
 type TasksResp struct {
 	Tasks []*db.Task `json:"tasks"`
 }
-type SearchResp struct {
-	Search string `json:"search"`
-}
 
 // Обрабатывает запрос api/tasks
 func TasksHendler(w http.ResponseWriter, r *http.Request) {

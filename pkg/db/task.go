@@ -1,6 +1,7 @@
 package db
 
 import (
+	"errors"
 	"fmt"
 	"time"
 )
@@ -154,4 +155,61 @@ func SearchDate(limit int, t time.Time) ([]*Task, error) {
 		return []*Task{}, fmt.Errorf("ошибка чтения базы данных: %w", err)
 	}
 	return taskSlice, nil
+}
+
+func GetTask(id string) (*Task, error) {
+	// Подготовленный запрос
+	query := `
+	SELECT * FROM scheduler
+	WHERE id = ?
+	`
+	var task Task
+
+	err := Db.QueryRow(query, id).Scan(&task.ID, &task.Date, &task.Title, &task.Comment, &task.Repeat)
+	if err != nil {
+		return &Task{}, err
+	}
+	return &task, nil
+}
+
+func UpdateTask(task *Task) error {
+	// Проверка входных данных
+	if task == nil {
+		return errors.New("task не может быть nil")
+	}
+	if task.ID == "" {
+		return errors.New("ID задачи не может быть пустым")
+	}
+
+	// Корректный SQL-запрос с условием WHERE
+	query := `
+    UPDATE scheduler 
+    SET date = ?, 
+        title = ?, 
+        comment = ?, 
+        repeat = ?
+    WHERE id = ?
+    `
+	res, err := Db.Exec(
+		query,
+		task.Date,
+		task.Title,
+		task.Comment,
+		task.Repeat,
+		task.ID,
+	)
+
+	if err != nil {
+		return err
+	}
+	// метод RowsAffected() возвращает количество записей к которым
+	// был применена SQL команда
+	count, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if count == 0 {
+		return fmt.Errorf(`incorrect id for updating task`)
+	}
+	return nil
 }

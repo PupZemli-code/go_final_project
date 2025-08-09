@@ -37,7 +37,11 @@ func InitMux(r *chi.Mux) error {
 	r.Handle("/*", fs)
 	r.Get("/test", TestHandler)
 	r.Get("/api/nextdate", NextDayHandler)
+
 	r.Post("/api/task", AddTaskHandler)
+	r.Get("/api/task", GetTaskHandler)
+	r.Put("/api/task", SaveTaskHandler)
+
 	r.Get("/api/tasks", TasksHendler)
 	return nil
 }
