@@ -113,17 +113,19 @@ func NextDate(now time.Time, dstart string, repeat string) (string, error) {
 		if err != nil {
 			return "", fmt.Errorf("ошибка форматирования strconv.Atoi(formatRepeat[1]): %w", err)
 		}
-		// if days == 1 {
-		// 	return date.Format(dateFormat), nil
-		// }
-		for {
+
+		maxIterations := 100
+		for i := 0; i < maxIterations; i++ {
+			// if !now.Before(date) {
+			// 	return date.Format(dateFormat), nil
+			// }
 			date = date.AddDate(0, 0, days)
 			if afterNow(date, now) {
 				return date.Format(dateFormat), nil
-				// break
 			}
 		}
-		// fmt.Println("NextDate (d):", date.Format(dateFormat)) // Add logging
+		Logger.Printf("не удалось найти дату в пределах %d итераций", maxIterations)
+		return "", fmt.Errorf("не удалось найти дату в пределах %d итераций", maxIterations)
 
 	case "w":
 		var daysWeek [7]bool
@@ -135,12 +137,11 @@ func NextDate(now time.Time, dstart string, repeat string) (string, error) {
 			}
 			daysWeek[daysInt-1] = true
 		}
-		// fmt.Println(daysWeek)
+
 		for {
 			date = date.AddDate(0, 0, 1)
 			weekday := date.Weekday()
 			v := GetDayNumberByString(weekday.String())
-			// fmt.Printf("дата: %s, значение v: %d, соответствует дню недели: %v\n", date.Format(dateFormat), v, daysWeek[v])
 
 			if daysWeek[v] {
 				if afterNow(date, now) {
@@ -217,7 +218,6 @@ func NextDate(now time.Time, dstart string, repeat string) (string, error) {
 					}
 				}
 			}
-			// logger.Printf("month[%d]=%v day[%d]=%v", m-1, months[m-1], d-1, day[d-1])
 			if i >= 700 {
 				return "", fmt.Errorf("превышено число итераций цикла i > 700, %v\n%v", months, day)
 			}

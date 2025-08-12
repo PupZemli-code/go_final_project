@@ -41,6 +41,8 @@ func InitMux(r *chi.Mux) error {
 	r.Post("/api/task", AddTaskHandler)
 	r.Get("/api/task", GetTaskHandler)
 	r.Put("/api/task", SaveTaskHandler)
+	r.Delete("/api/task", DeleteTaskHandler)
+	r.Post("/api/task/done", TaskDoneHandler)
 
 	r.Get("/api/tasks", TasksHendler)
 	return nil

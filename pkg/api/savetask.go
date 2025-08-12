@@ -3,7 +3,6 @@ package api
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"time"
 
@@ -12,7 +11,7 @@ import (
 
 // Принемает Task, возвращает пустой интерфейс any{} == interface{}{}
 func SaveTaskHandler(w http.ResponseWriter, r *http.Request) {
-	log.Print("SaveTaskHandler запущен")
+
 	// Структура для хранения данных
 	var task db.Task
 

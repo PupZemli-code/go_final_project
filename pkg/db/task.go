@@ -3,6 +3,7 @@ package db
 import (
 	"errors"
 	"fmt"
+	"strconv"
 	"time"
 )
 
@@ -157,21 +158,36 @@ func SearchDate(limit int, t time.Time) ([]*Task, error) {
 	return taskSlice, nil
 }
 
+// GetTask выгружает Task из db по ее id
 func GetTask(id string) (*Task, error) {
+	var task Task
+	if id == "" {
+		return &task, errors.New("ошибка GetTask: получено пустое значение id")
+	}
 	// Подготовленный запрос
 	query := `
 	SELECT * FROM scheduler
 	WHERE id = ?
 	`
-	var task Task
 
-	err := Db.QueryRow(query, id).Scan(&task.ID, &task.Date, &task.Title, &task.Comment, &task.Repeat)
+	err := Db.QueryRow(query, id).Scan(
+		&task.ID,
+		&task.Date,
+		&task.Title,
+		&task.Comment,
+		&task.Repeat,
+	)
+
 	if err != nil {
+		// if errors.Is(err, sql.ErrNoRows) {
+		// 	return &Task{}, err
+		// }
 		return &Task{}, err
 	}
 	return &task, nil
 }
 
+// UpdateTask обновляет запись в db
 func UpdateTask(task *Task) error {
 	// Проверка входных данных
 	if task == nil {
@@ -181,7 +197,7 @@ func UpdateTask(task *Task) error {
 		return errors.New("ID задачи не может быть пустым")
 	}
 
-	// Корректный SQL-запрос с условием WHERE
+	// Подготовленный запрос
 	query := `
     UPDATE scheduler 
     SET date = ?, 
@@ -210,6 +226,46 @@ func UpdateTask(task *Task) error {
 	}
 	if count == 0 {
 		return fmt.Errorf(`incorrect id for updating task`)
+	}
+	return nil
+}
+
+func DeleteTask(id string) error {
+	// Проверка id
+	if id == "" {
+		return errors.New("DeleteTask: ID задачи не может быть пустым")
+	}
+
+	// Подготовленный запрос
+	quary := `
+	DELETE FROM scheduler 
+	WHERE id = ?
+	`
+
+	_, err := Db.Exec(quary, id)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func UpdateDate(next string, id string) error {
+	if id == "" {
+		return errors.New("DeleteTask: ID задачи не может быть пустым")
+	}
+	if _, err := strconv.Atoi(id); err != nil {
+		return fmt.Errorf("ошибка в UpdateDate: strconv.Atoi(id): %v", err)
+	}
+
+	quary := `
+	UPDATE scheduler 
+    SET date = ? 
+    WHERE id = ?
+	`
+
+	_, err := Db.Exec(quary, next, id)
+	if err != nil {
+		return fmt.Errorf("ошибка в UpdateDate: Db.Exec(quary, next, id): %v", err)
 	}
 	return nil
 }

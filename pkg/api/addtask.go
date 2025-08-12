@@ -15,7 +15,7 @@ func AddTaskHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Структура для хранения данных
 	var task db.Task
-
+	var err error
 	// Читает тело запроса
 	decoder := json.NewDecoder(r.Body)
 	if err := decoder.Decode(&task); err != nil {
@@ -25,11 +25,13 @@ func AddTaskHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Проверяет корректноять парсинга
-	t, err := time.Parse(dateFormat, task.Date)
-	if err != nil {
-		Logger.Printf("ошибка парсинга даты Date [входные данные: %v]: %v", task.Date, err)
-		sendError(w, http.StatusBadRequest, fmt.Errorf("ошибка парсинга даты Date: %w", err))
-		return
+	if task.Date != "" {
+		_, err := time.Parse(dateFormat, task.Date)
+		if err != nil {
+			Logger.Printf("ошибка парсинга даты Date [входные данные: %v]: %v", task.Date, err)
+			sendError(w, http.StatusBadRequest, fmt.Errorf("ошибка парсинга даты Date: %w", err))
+			return
+		}
 	}
 
 	// Проверяет наличие данных в Title (поле не может быть пустым)
@@ -41,8 +43,9 @@ func AddTaskHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Если поле Date содержит данные
 	if task.Date != "" {
-		// Если date < текущего дня
-		if !afterNow(t, time.Now()) {
+		// Если date != текущему дню
+		if task.Date != time.Now().Format(dateFormat) {
+
 			// Если параметры повтарения отсутствуют
 			if task.Repeat == "" || len(task.Repeat) == 0 {
 				task.Date = time.Now().Format(dateFormat)
@@ -62,19 +65,6 @@ func AddTaskHandler(w http.ResponseWriter, r *http.Request) {
 	// ели Date пусто, записывает текущую дату
 	if task.Date == "" {
 		task.Date = time.Now().Format(dateFormat)
-		if task.Repeat == "" || len(task.Repeat) == 0 {
-			task.Date = time.Now().Format(dateFormat)
-		}
-		// Если параметры повтарения присутствуют
-		if task.Repeat != "" {
-			nextDate, err := NextDate(time.Now(), task.Date, task.Repeat)
-			if err != nil {
-				Logger.Printf("ошибка рассчета даты NextDate: %v", err)
-				sendError(w, http.StatusBadRequest, fmt.Errorf("ошибка рассчета даты NextDate: %w", err))
-				return
-			}
-			task.Date = nextDate
-		}
 	}
 	// id, err := dbInstance.AddTask(&task)
 	id, err := db.AddTask(&task)
@@ -85,7 +75,6 @@ func AddTaskHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	task.ID = strconv.Itoa(int(id))
 
-	//writeJson(w, task.ID)
 	writeJson(w, map[string]any{
 		"id": task.ID,
 	})

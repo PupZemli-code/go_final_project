@@ -3,7 +3,6 @@ package api
 import (
 	"errors"
 	"fmt"
-	"log"
 	"net/http"
 	"strconv"
 
@@ -11,7 +10,7 @@ import (
 )
 
 func GetTaskHandler(w http.ResponseWriter, r *http.Request) {
-	log.Print("GetTaskHandler запущен")
+
 	var task *db.Task
 	var err error
 	// Получаем значение id
