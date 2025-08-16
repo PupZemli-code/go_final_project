@@ -116,9 +116,6 @@ func NextDate(now time.Time, dstart string, repeat string) (string, error) {
 
 		maxIterations := 100
 		for i := 0; i < maxIterations; i++ {
-			// if !now.Before(date) {
-			// 	return date.Format(dateFormat), nil
-			// }
 			date = date.AddDate(0, 0, days)
 			if afterNow(date, now) {
 				return date.Format(dateFormat), nil

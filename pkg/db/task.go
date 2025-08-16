@@ -3,6 +3,7 @@ package db
 import (
 	"errors"
 	"fmt"
+	"log"
 	"strconv"
 	"time"
 )
@@ -122,6 +123,7 @@ func SearchTitleComment(limit int, search string) ([]*Task, error) {
 // SearchDate возвращает limit значений по
 // параметрам поиска даты.
 func SearchDate(limit int, t time.Time) ([]*Task, error) {
+	log.Printf("SearchDat: дата t == %v", t.Format(dateFormat))
 	taskSlice := []*Task{}
 
 	// Подготовленный запрос
@@ -132,7 +134,7 @@ func SearchDate(limit int, t time.Time) ([]*Task, error) {
 	`
 
 	date := t.Format(dateFormat)
-
+	log.Printf("SearchDat: дата date == %v", date)
 	// Получает *sql.Rows (строки из db в количестве limit)
 	rows, err := Db.Query(query, date, limit)
 	if err != nil {
@@ -155,6 +157,7 @@ func SearchDate(limit int, t time.Time) ([]*Task, error) {
 		Logger.Printf("ошибка rows.Err(): %v", err)
 		return []*Task{}, fmt.Errorf("ошибка чтения базы данных: %w", err)
 	}
+	log.Printf("SearchDat: taskSlice == %v", taskSlice)
 	return taskSlice, nil
 }
 
@@ -179,9 +182,6 @@ func GetTask(id string) (*Task, error) {
 	)
 
 	if err != nil {
-		// if errors.Is(err, sql.ErrNoRows) {
-		// 	return &Task{}, err
-		// }
 		return &Task{}, err
 	}
 	return &task, nil

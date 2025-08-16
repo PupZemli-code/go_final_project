@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/PupZemli-code/go-final-project/go_final_project/pkg/db"
 	"github.com/PupZemli-code/go-final-project/go_final_project/pkg/logger"
 	"github.com/go-chi/chi"
 )
@@ -38,13 +39,15 @@ func InitMux(r *chi.Mux) error {
 	r.Get("/test", TestHandler)
 	r.Get("/api/nextdate", NextDayHandler)
 
-	r.Post("/api/task", AddTaskHandler)
-	r.Get("/api/task", GetTaskHandler)
-	r.Put("/api/task", SaveTaskHandler)
-	r.Delete("/api/task", DeleteTaskHandler)
-	r.Post("/api/task/done", TaskDoneHandler)
+	r.Post("/api/task", auth(AddTaskHandler))
+	r.Get("/api/task", auth(GetTaskHandler))
+	r.Put("/api/task", auth(SaveTaskHandler))
+	r.Delete("/api/task", auth(DeleteTaskHandler))
+	r.Post("/api/task/done", auth(TaskDoneHandler))
 
-	r.Get("/api/tasks", TasksHendler)
+	r.Get("/api/tasks", auth(TasksHendler))
+
+	r.Post("/api/signin", SigninHandler)
 	return nil
 }
 
@@ -116,4 +119,19 @@ func writeJson(w http.ResponseWriter, data any) {
 	if _, err := w.Write(jsonData); err != nil {
 		Logger.Printf("Ошибка при отправке JSON ответа: %v", err)
 	}
+}
+
+func tasksToMaps(tasks []*db.Task) []map[string]string {
+	result := make([]map[string]string, len(tasks))
+
+	for i, task := range tasks {
+		result[i] = map[string]string{
+			"id":      task.ID,
+			"date":    task.Date,
+			"title":   task.Title,
+			"comment": task.Comment,
+			"repeat":  task.Repeat,
+		}
+	}
+	return result
 }
