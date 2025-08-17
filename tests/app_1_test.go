@@ -3,6 +3,7 @@ package tests
 import (
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -10,7 +11,9 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/PupZemli-code/go-final-project/go_final_project/internal/server"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func getURL(path string) string {
@@ -69,4 +72,17 @@ func TestApp(t *testing.T) {
 		return nil
 	}
 	assert.NoError(t, walkDir("../web", cmp))
+}
+
+func TestGetAddr(t *testing.T) {
+	// Очищаем переменные
+	os.Unsetenv("TODO_HOST")
+	os.Unsetenv("TODO_PORT")
+	if err := os.Setenv("TODO_HOST", "test"); err != nil {
+		log.Fatal("ошибка установки TODO_HOST", err)
+	}
+	if err := os.Setenv("TODO_PORT", "test"); err != nil {
+		log.Fatal("ошибка установки TODO_PORT", err)
+	}
+	require.Equal(t, server.GetAddr(), "test:test")
 }
