@@ -9,6 +9,7 @@ import (
 	"github.com/PupZemli-code/go-final-project/go_final_project/pkg/db"
 )
 
+// Реализует запрос r.Post"/api/task/done"
 func TaskDoneHandler(w http.ResponseWriter, r *http.Request) {
 	id := r.URL.Query().Get("id")
 

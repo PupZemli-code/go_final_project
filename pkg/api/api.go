@@ -8,7 +8,6 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/PupZemli-code/go-final-project/go_final_project/pkg/db"
 	"github.com/PupZemli-code/go-final-project/go_final_project/pkg/logger"
 	"github.com/go-chi/chi"
 )
@@ -16,6 +15,7 @@ import (
 var dateFormat string = "20060102"
 var Logger *log.Logger
 
+// staticPath подключает web
 func staticPath() (http.Handler, error) {
 	// Настройка раздачи статических файлов
 	staticPath, err := filepath.Abs("./web")
@@ -51,7 +51,7 @@ func InitMux(r *chi.Mux) error {
 	return nil
 }
 
-// TestHandler возвращает Metod, Host, Path
+// TestHandler для тестового запуска, возвращает Metod, Host, Path
 func TestHandler(w http.ResponseWriter, r *http.Request) {
 
 	s := fmt.Sprintf("Method: %s\nHost: %s\nPath: %s",
@@ -119,19 +119,4 @@ func writeJson(w http.ResponseWriter, data any) {
 	if _, err := w.Write(jsonData); err != nil {
 		Logger.Printf("Ошибка при отправке JSON ответа: %v", err)
 	}
-}
-
-func tasksToMaps(tasks []*db.Task) []map[string]string {
-	result := make([]map[string]string, len(tasks))
-
-	for i, task := range tasks {
-		result[i] = map[string]string{
-			"id":      task.ID,
-			"date":    task.Date,
-			"title":   task.Title,
-			"comment": task.Comment,
-			"repeat":  task.Repeat,
-		}
-	}
-	return result
 }

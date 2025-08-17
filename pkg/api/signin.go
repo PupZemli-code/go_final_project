@@ -15,7 +15,8 @@ import (
 var secretKey = "qwerty"
 var SignedToken string
 
-// todo
+// Реализует запрос r.Post "/api/signin"
+// авторизация пользователя
 func SigninHandler(w http.ResponseWriter, r *http.Request) {
 	// Принемает пароль из переменной окружения "TODO_PASSWORD"
 	passTODO := os.Getenv("TODO_PASSWORD")
@@ -70,6 +71,7 @@ func SigninHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// middleware для последующих запросов
 func auth(next http.HandlerFunc) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// смотрим наличие пароля

@@ -9,7 +9,8 @@ import (
 	"github.com/PupZemli-code/go-final-project/go_final_project/pkg/db"
 )
 
-// Принемает Task, возвращает пустой интерфейс any{} == interface{}{}
+// Реализует запрос r.Put"/api/task",
+// принемает Task, возвращает пустой интерфейс any{} == interface{}{}
 func SaveTaskHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Структура для хранения данных

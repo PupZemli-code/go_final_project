@@ -95,7 +95,8 @@ func ValidDstarRepeat(dstart string, repeat string) error {
 	return nil
 }
 
-// NextDate возвращает строку с датой в формате 20060102
+// NextDate расчитывает следующую дату по заданному правилу
+// возвращает строку с датой в формате 20060102
 func NextDate(now time.Time, dstart string, repeat string) (string, error) {
 	if err := ValidDstarRepeat(dstart, repeat); err != nil {
 		return "", fmt.Errorf("формат repeat не прошел проверку: %w", err)
@@ -191,14 +192,12 @@ func NextDate(now time.Time, dstart string, repeat string) (string, error) {
 					return "", fmt.Errorf("запрос на -3 день недоступен")
 				}
 				y, m, _ := date.Date()
-				// logger.Printf("m=%d", m)
 
 				firstOfNextMonth := time.Date(y, m+1, 1, 0, 0, 0, 0, time.UTC)
-				// logger.Printf("первый день следующего месяца %v", firstOfNextMonth.Format(dateFormat))
 
 				// dayMinus хранит номер дня высчитаный из инструкции -1,-2
 				dayMinus := firstOfNextMonth.AddDate(0, 0, dayNum)
-				// logger.Printf("дата после вычитания dayMinus[%v]", dayMinus.Format(dateFormat))
+
 				// dayCount номер последнего или предпоследнего дня
 				_, _, dayCount := dayMinus.Date()
 
@@ -237,7 +236,8 @@ func afterNow(date, now time.Time) bool {
 	return date.After(now)
 }
 
-// GetDayNumberByString компенсирует разницу начала отсчета недели
+// GetDayNumberByString компенсирует разницу начала отсчета недели,
+// отсчет реализован с Понедельника
 func GetDayNumberByString(day string) int {
 	dayMap := map[string]int{
 		"Sunday":    6,

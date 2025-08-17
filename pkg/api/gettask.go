@@ -9,6 +9,7 @@ import (
 	"github.com/PupZemli-code/go-final-project/go_final_project/pkg/db"
 )
 
+// Реализует запрос r.Get"/api/task"
 func GetTaskHandler(w http.ResponseWriter, r *http.Request) {
 
 	var task *db.Task

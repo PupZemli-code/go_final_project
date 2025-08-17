@@ -50,9 +50,8 @@ func TasksHendler(w http.ResponseWriter, r *http.Request) {
 			//Tasks = tasks.Tasks
 			log.Printf("длина Tasks == %v", len(Tasks))
 			log.Printf("Tasks == %v", Tasks)
-			resp := tasksToMaps(Tasks)
-			log.Printf("длина resp == %v", len(resp))
-			writeJson(w, map[string]any{"tasks": resp})
+			//resp := tasksToMaps(Tasks)
+			writeJson(w, map[string]any{"tasks": Tasks})
 			return
 
 		} else {
@@ -64,14 +63,12 @@ func TasksHendler(w http.ResponseWriter, r *http.Request) {
 				sendError(w, http.StatusInternalServerError, fmt.Errorf("ошибка поиска по строке: %w", err))
 				return
 			}
-			// отправляет ответ json
+			// Отправляет ответ json
 			if len(Tasks) == 0 {
-				Logger.Println("db.SearchTitleComment вернул пустую структуру")
 				writeJson(w, []*db.Task{})
 				return
 			} else {
-				resp := tasksToMaps(Tasks)
-				writeJson(w, map[string]any{"tasks": resp})
+				writeJson(w, map[string]any{"tasks": Tasks})
 				return
 			}
 		}

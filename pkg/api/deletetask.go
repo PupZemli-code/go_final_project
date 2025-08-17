@@ -8,6 +8,7 @@ import (
 	"github.com/PupZemli-code/go-final-project/go_final_project/pkg/db"
 )
 
+// Реализует запрос r.Delete"/api/task"
 func DeleteTaskHandler(w http.ResponseWriter, r *http.Request) {
 	id := r.URL.Query().Get("id")
 

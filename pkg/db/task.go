@@ -218,6 +218,7 @@ func UpdateTask(task *Task) error {
 	if err != nil {
 		return err
 	}
+
 	// метод RowsAffected() возвращает количество записей к которым
 	// был применена SQL команда
 	count, err := res.RowsAffected()
@@ -249,6 +250,7 @@ func DeleteTask(id string) error {
 	return nil
 }
 
+// Обновляет запись в db
 func UpdateDate(next string, id string) error {
 	if id == "" {
 		return errors.New("DeleteTask: ID задачи не может быть пустым")
