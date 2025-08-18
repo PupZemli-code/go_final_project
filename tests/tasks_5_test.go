@@ -103,6 +103,6 @@ func TestTasks(t *testing.T) {
 	tasks = getTasks(t, "УК")
 	assert.Equal(t, len(tasks), 1)
 	tasks = getTasks(t, now.Format(`02.01.2006`))
-	assert.Equal(t, len(tasks), 3, fmt.Sprintf("now = %v", now.Format(`02.01.2006`)))
+	assert.Equal(t, len(tasks), 3)
 
 }
