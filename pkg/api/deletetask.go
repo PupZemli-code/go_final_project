@@ -4,12 +4,10 @@ import (
 	"errors"
 	"net/http"
 	"strconv"
-
-	"github.com/PupZemli-code/go-final-project/go_final_project/pkg/db"
 )
 
 // Реализует запрос r.Delete"/api/task"
-func DeleteTaskHandler(w http.ResponseWriter, r *http.Request) {
+func (t TaskService) DeleteTaskHandler(w http.ResponseWriter, r *http.Request) {
 	id := r.URL.Query().Get("id")
 
 	if id == "" {
@@ -25,7 +23,7 @@ func DeleteTaskHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err := db.DeleteTask(id)
+	err := t.store.DeleteTask(id)
 	if err != nil {
 		Logger.Printf("получена ошибка из db.DeleteTask(id): %v", err)
 		sendError(w, http.StatusInternalServerError, err)

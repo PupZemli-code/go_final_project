@@ -1,6 +1,7 @@
 package db
 
 import (
+	"database/sql"
 	"errors"
 	"fmt"
 	"log"
@@ -18,17 +19,26 @@ type Task struct {
 
 var dateFormat string = "20060102"
 
+type TaskStore struct {
+	db *sql.DB
+}
+
+func NewTaskStore(db *sql.DB) TaskStore {
+	return TaskStore{db: db}
+}
+
 // AddTask записывает в базу данных структуру Task,
 // возвращает id записанных данных, и ошибку
-func AddTask(task *Task) (int64, error) {
+func (db TaskStore) AddTask(task *Task) (int64, error) {
 
 	// Подготовленный запрос
 	query := `
     INSERT INTO scheduler(date, title, comment, repeat) 
     VALUES(?, ?, ?, ?)
     `
+
 	// Запрос с получением результатат
-	res, err := Db.Exec(query,
+	res, err := db.db.Exec(query,
 		task.Date,
 		task.Title,
 		task.Comment,
@@ -47,7 +57,7 @@ func AddTask(task *Task) (int64, error) {
 }
 
 // Tasks возвращает limit кол-во записей из db
-func Tasks(limit int) ([]*Task, error) {
+func (db TaskStore) Tasks(limit int) ([]*Task, error) {
 	taskSlice := []*Task{}
 
 	// Подготовленный запрос
@@ -56,7 +66,7 @@ func Tasks(limit int) ([]*Task, error) {
 	ORDER BY date LIMIT ?
 	`
 	// Получает *sql.Rows (строки из db в количестве limit)
-	rows, err := Db.Query(query, limit)
+	rows, err := db.db.Query(query, limit)
 	if err != nil {
 		Logger.Printf("ошибка работы db.Query: %v", err)
 		return []*Task{}, fmt.Errorf("ошибка чтения базы данных: %w", err)
@@ -83,7 +93,7 @@ func Tasks(limit int) ([]*Task, error) {
 
 // SearchTitleComment возвращает limit значений по
 // параметрам поиска подстроки title, comment.
-func SearchTitleComment(limit int, search string) ([]*Task, error) {
+func (db TaskStore) SearchTitleComment(limit int, search string) ([]*Task, error) {
 	taskSlice := []*Task{}
 
 	// Подготовленный запрос
@@ -95,7 +105,7 @@ func SearchTitleComment(limit int, search string) ([]*Task, error) {
 	LIMIT ? 
 	`
 	search = "%" + search + "%"
-	rows, err := Db.Query(query, search, search, limit)
+	rows, err := db.db.Query(query, search, search, limit)
 	if err != nil {
 		Logger.Printf("ошибка работы db.Query: %v", err)
 		return []*Task{}, fmt.Errorf("ошибка чтения базы данных: %w", err)
@@ -122,7 +132,7 @@ func SearchTitleComment(limit int, search string) ([]*Task, error) {
 
 // SearchDate возвращает limit значений по
 // параметрам поиска даты.
-func SearchDate(limit int, t time.Time) ([]*Task, error) {
+func (db TaskStore) SearchDate(limit int, t time.Time) ([]*Task, error) {
 	log.Printf("SearchDat: дата t == %v", t.Format(dateFormat))
 	taskSlice := []*Task{}
 
@@ -136,7 +146,7 @@ func SearchDate(limit int, t time.Time) ([]*Task, error) {
 	date := t.Format(dateFormat)
 	log.Printf("SearchDat: дата date == %v", date)
 	// Получает *sql.Rows (строки из db в количестве limit)
-	rows, err := Db.Query(query, date, limit)
+	rows, err := db.db.Query(query, date, limit)
 	if err != nil {
 		Logger.Printf("ошибка работы db.Query: %v", err)
 		return []*Task{}, fmt.Errorf("ошибка чтения базы данных: %w", err)
@@ -162,7 +172,7 @@ func SearchDate(limit int, t time.Time) ([]*Task, error) {
 }
 
 // GetTask выгружает Task из db по ее id
-func GetTask(id string) (*Task, error) {
+func (db TaskStore) GetTask(id string) (*Task, error) {
 	var task Task
 	if id == "" {
 		return &task, errors.New("ошибка GetTask: получено пустое значение id")
@@ -173,7 +183,7 @@ func GetTask(id string) (*Task, error) {
 	WHERE id = ?
 	`
 
-	err := Db.QueryRow(query, id).Scan(
+	err := db.db.QueryRow(query, id).Scan(
 		&task.ID,
 		&task.Date,
 		&task.Title,
@@ -188,7 +198,7 @@ func GetTask(id string) (*Task, error) {
 }
 
 // UpdateTask обновляет запись в db
-func UpdateTask(task *Task) error {
+func (db TaskStore) UpdateTask(task *Task) error {
 	// Проверка входных данных
 	if task == nil {
 		return errors.New("task не может быть nil")
@@ -206,7 +216,7 @@ func UpdateTask(task *Task) error {
         repeat = ?
     WHERE id = ?
     `
-	res, err := Db.Exec(
+	res, err := db.db.Exec(
 		query,
 		task.Date,
 		task.Title,
@@ -231,7 +241,8 @@ func UpdateTask(task *Task) error {
 	return nil
 }
 
-func DeleteTask(id string) error {
+// Удаляет запись из базы данных
+func (db TaskStore) DeleteTask(id string) error {
 	// Проверка id
 	if id == "" {
 		return errors.New("DeleteTask: ID задачи не может быть пустым")
@@ -243,7 +254,7 @@ func DeleteTask(id string) error {
 	WHERE id = ?
 	`
 
-	_, err := Db.Exec(quary, id)
+	_, err := db.db.Exec(quary, id)
 	if err != nil {
 		return err
 	}
@@ -251,7 +262,7 @@ func DeleteTask(id string) error {
 }
 
 // Обновляет запись в db
-func UpdateDate(next string, id string) error {
+func (db TaskStore) UpdateDate(next string, id string) error {
 	if id == "" {
 		return errors.New("DeleteTask: ID задачи не может быть пустым")
 	}
@@ -265,7 +276,7 @@ func UpdateDate(next string, id string) error {
     WHERE id = ?
 	`
 
-	_, err := Db.Exec(quary, next, id)
+	_, err := db.db.Exec(quary, next, id)
 	if err != nil {
 		return fmt.Errorf("ошибка в UpdateDate: Db.Exec(quary, next, id): %v", err)
 	}

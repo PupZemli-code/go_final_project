@@ -40,10 +40,10 @@ func GetAddr() string {
 }
 
 // Создает сервер
-func NewServer(logger *log.Logger) *Server {
+func NewServer(logger *log.Logger, t api.TaskService) *Server {
 	// Инициализация роутера и хендлеров
 	r := chi.NewRouter()
-	err := api.InitMux(r)
+	err := api.InitMux(r, t)
 	if err != nil {
 		logger.Fatal(err)
 	}

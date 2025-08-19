@@ -5,12 +5,10 @@ import (
 	"net/http"
 	"strconv"
 	"time"
-
-	"github.com/PupZemli-code/go-final-project/go_final_project/pkg/db"
 )
 
 // Реализует запрос r.Post"/api/task/done"
-func TaskDoneHandler(w http.ResponseWriter, r *http.Request) {
+func (t TaskService) TaskDoneHandler(w http.ResponseWriter, r *http.Request) {
 	id := r.URL.Query().Get("id")
 
 	// Проверка id
@@ -27,7 +25,7 @@ func TaskDoneHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	task, err := db.GetTask(id)
+	task, err := t.store.GetTask(id)
 	if err != nil {
 		Logger.Printf("ошибка в TaskDoneHandler: GetTask: %v", err)
 		sendError(w, http.StatusInternalServerError, err)
@@ -37,7 +35,7 @@ func TaskDoneHandler(w http.ResponseWriter, r *http.Request) {
 	// Если правило повторения отсутствует,
 	// удолит задачу
 	if task.Repeat == "" {
-		err := db.DeleteTask(task.ID)
+		err := t.store.DeleteTask(task.ID)
 		if err != nil {
 			Logger.Printf("ошибка в TaskDoneHandler: DeleteTask: %v", err)
 			sendError(w, http.StatusInternalServerError, err)
@@ -54,7 +52,7 @@ func TaskDoneHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = db.UpdateDate(next, id)
+	err = t.store.UpdateDate(next, id)
 
 	if err != nil {
 		Logger.Printf("ошибка в TaskDoneHandler: UpdateDate: %v", err)

@@ -12,7 +12,7 @@ import (
 )
 
 // AddTaskHandler обрабатывает запрос "/api/task" POST
-func AddTaskHandler(w http.ResponseWriter, r *http.Request) {
+func (t TaskService) AddTaskHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Структура для хранения данных
 	var task db.Task
@@ -67,7 +67,7 @@ func AddTaskHandler(w http.ResponseWriter, r *http.Request) {
 		task.Date = time.Now().Format(dateFormat)
 	}
 	// id, err := dbInstance.AddTask(&task)
-	id, err := db.AddTask(&task)
+	id, err := t.store.AddTask(&task)
 	if err != nil {
 		Logger.Printf("ошибка добавления task в базу данных: %v", err)
 		sendError(w, http.StatusBadRequest, fmt.Errorf("ошибка добавления task в базу данных: %w", err))

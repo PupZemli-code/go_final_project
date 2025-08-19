@@ -8,11 +8,21 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/PupZemli-code/go-final-project/go_final_project/pkg/db"
 	"github.com/PupZemli-code/go-final-project/go_final_project/pkg/logger"
 	"github.com/go-chi/chi"
 )
 
+type TaskService struct {
+	store db.TaskStore
+}
+
+func NewTaskService(store db.TaskStore) TaskService {
+	return TaskService{store: store}
+}
+
 var dateFormat string = "20060102"
+
 var Logger *log.Logger
 
 // staticPath подключает web
@@ -27,7 +37,7 @@ func staticPath() (http.Handler, error) {
 }
 
 // InitMux инициализирует роутер chi
-func InitMux(r *chi.Mux) error {
+func InitMux(r *chi.Mux, t TaskService) error {
 	Logger, _ = logger.NewLogger()
 
 	fs, err := staticPath()
@@ -39,13 +49,13 @@ func InitMux(r *chi.Mux) error {
 	r.Get("/test", TestHandler)
 	r.Get("/api/nextdate", NextDayHandler)
 
-	r.Post("/api/task", auth(AddTaskHandler))
-	r.Get("/api/task", auth(GetTaskHandler))
-	r.Put("/api/task", auth(SaveTaskHandler))
-	r.Delete("/api/task", auth(DeleteTaskHandler))
-	r.Post("/api/task/done", auth(TaskDoneHandler))
+	r.Post("/api/task", auth(t.AddTaskHandler))
+	r.Get("/api/task", auth(t.GetTaskHandler))
+	r.Put("/api/task", auth(t.SaveTaskHandler))
+	r.Delete("/api/task", auth(t.DeleteTaskHandler))
+	r.Post("/api/task/done", auth(t.TaskDoneHandler))
 
-	r.Get("/api/tasks", auth(TasksHendler))
+	r.Get("/api/tasks", auth(t.TasksHendler))
 
 	r.Post("/api/signin", SigninHandler)
 	return nil
