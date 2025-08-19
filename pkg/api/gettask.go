@@ -10,7 +10,7 @@ import (
 )
 
 // Реализует запрос r.Get"/api/task"
-func GetTaskHandler(w http.ResponseWriter, r *http.Request) {
+func (t TaskService) GetTaskHandler(w http.ResponseWriter, r *http.Request) {
 
 	var task *db.Task
 	var err error
@@ -32,7 +32,7 @@ func GetTaskHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Поиск задачи
-	task, err = db.GetTask(id)
+	task, err = t.store.GetTask(id)
 	if err != nil {
 		Logger.Printf("ошибка в GetTask: %v", err)
 		sendError(w, http.StatusInternalServerError, fmt.Errorf("ошибка в GetTask: %w", err))

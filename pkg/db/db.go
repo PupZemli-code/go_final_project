@@ -12,7 +12,6 @@ import (
 )
 
 var Logger *log.Logger
-var Db *sql.DB
 
 // Возвращает путь до базы данных, берет его из переменной
 // окружения "TODO_DBFILE", или использует путь по умолчанию
@@ -36,7 +35,7 @@ func PathDb() string {
 // Создает подключение к базе данных, если базы
 // нет, создает ее по указанной схеме
 // Инициализация базы данных
-func InitDb(pathDb string) error {
+func InitDb(pathDb string) (*sql.DB, error) {
 	Logger, _ = logger.NewLogger()
 	schema := `
     CREATE TABLE IF NOT EXISTS scheduler (
@@ -52,7 +51,7 @@ func InitDb(pathDb string) error {
 	// Открываем соединение
 	db, err := sql.Open("sqlite", pathDb)
 	if err != nil {
-		return fmt.Errorf("ошибка подключения к БД: %w", err)
+		return nil, fmt.Errorf("ошибка подключения к БД: %w", err)
 	}
 
 	// Настройка пула подключений
@@ -63,16 +62,13 @@ func InitDb(pathDb string) error {
 	// Создаем таблицы
 	_, err = db.Exec(schema)
 	if err != nil {
-		return fmt.Errorf("ошибка создания таблицы: %w", err)
+		return nil, fmt.Errorf("ошибка создания таблицы: %w", err)
 	}
 
-	Db = db
-	return nil
+	return db, nil
 }
 
 // Закрытие подключения
-func CloseDb() {
-	if Db != nil {
-		Db.Close()
-	}
+func CloseDb(db *sql.DB) {
+	db.Close()
 }

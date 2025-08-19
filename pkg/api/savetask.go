@@ -11,7 +11,7 @@ import (
 
 // Реализует запрос r.Put"/api/task",
 // принемает Task, возвращает пустой интерфейс any{} == interface{}{}
-func SaveTaskHandler(w http.ResponseWriter, r *http.Request) {
+func (t TaskService) SaveTaskHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Структура для хранения данных
 	var task db.Task
@@ -24,7 +24,7 @@ func SaveTaskHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Проверяет корректноять парсинга
-	t, err := time.Parse(dateFormat, task.Date)
+	ti, err := time.Parse(dateFormat, task.Date)
 	if err != nil {
 		Logger.Printf("ошибка парсинга даты Date [входные данные: %v]: %v", task.Date, err)
 		sendError(w, http.StatusBadRequest, fmt.Errorf("ошибка парсинга даты Date: %w", err))
@@ -41,7 +41,7 @@ func SaveTaskHandler(w http.ResponseWriter, r *http.Request) {
 	// Если поле Date содержит данные
 	if task.Date != "" {
 		// Если date < текущего дня
-		if !afterNow(t, time.Now()) {
+		if !afterNow(ti, time.Now()) {
 			// Если параметры повтарения отсутствуют
 			if task.Repeat == "" || len(task.Repeat) == 0 {
 				task.Date = time.Now().Format(dateFormat)
@@ -75,7 +75,7 @@ func SaveTaskHandler(w http.ResponseWriter, r *http.Request) {
 			task.Date = nextDate
 		}
 	}
-	err = db.UpdateTask(&task)
+	err = t.store.UpdateTask(&task)
 	if err != nil {
 		Logger.Printf("ошибка обновления task в базе данных: %v", err)
 		sendError(w, http.StatusBadRequest, fmt.Errorf("ошибка обновления task в базе данных: %w", err))

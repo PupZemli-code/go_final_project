@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/PupZemli-code/go-final-project/go_final_project/internal/server"
+	"github.com/PupZemli-code/go-final-project/go_final_project/pkg/api"
 	"github.com/PupZemli-code/go-final-project/go_final_project/pkg/db"
 	"github.com/PupZemli-code/go-final-project/go_final_project/pkg/logger"
 )
@@ -17,15 +18,18 @@ func main() {
 	Logger, _ = logger.NewLogger()
 	defer logfile.Close()
 
-	// Создание сервера
-	srv := server.NewServer(Logger)
-
 	// Инициализация базы данных
-	err := db.InitDb(db.PathDb())
+	database, err := db.InitDb(db.PathDb())
 	if err != nil {
 		Logger.Fatalf("ошибка инициализации db: %v", err)
 	}
-	defer db.CloseDb()
+	defer db.CloseDb(database)
+
+	tstore := db.NewTaskStore(database)
+	tservice := api.NewTaskService(tstore)
+
+	// Создание сервера
+	srv := server.NewServer(Logger, tservice)
 
 	// Запуск сервера
 	Logger.Printf("------------------------------------------")
